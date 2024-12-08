@@ -1,0 +1,154 @@
+"use client";
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { useChatSession } from "@/hooks/use-chat-session";
+import {
+  Chat,
+  Eraser,
+  Moon,
+  Plus,
+  Sun,
+  TrashSimple,
+} from "@phosphor-icons/react";
+import moment from "moment";
+import { useTheme } from "next-themes";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useChatContext } from "../chat/context";
+import { FiltersContext } from "./context";
+
+export type TFiltersProvider = {
+  children: React.ReactNode;
+};
+export const FiltersProvider = ({ children }: TFiltersProvider) => {
+  const {
+    sessions,
+    createSession,
+    clearChatSessions,
+    removeSession,
+    currentSession,
+  } = useChatContext();
+  const { sortSessions } = useChatSession();
+  const router = useRouter();
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const { theme, setTheme } = useTheme();
+
+  const open = () => setIsFilterOpen(true);
+
+  const dismiss = () => setIsFilterOpen(false);
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setIsFilterOpen((open) => !open);
+      }
+    };
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, []);
+
+  return (
+    <FiltersContext.Provider value={{ open, dismiss }}>
+      {children}
+
+      <CommandDialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+        <CommandInput placeholder="Search..." />
+        <CommandList>
+          <CommandEmpty>No results found.</CommandEmpty>
+          <CommandGroup heading="Actions">
+            <CommandItem
+              className="gap-3"
+              value="new"
+              onSelect={(value) => {
+                createSession().then((session) => {
+                  router.push(`/chat/${session.id}`);
+                  dismiss();
+                });
+              }}
+            >
+              <Plus size={14} weight="bold" />
+              New session
+            </CommandItem>
+            <CommandItem
+              className="gap-3"
+              value="theme"
+              onSelect={(value) => {
+                setTheme(theme === "light" ? "dark" : "light");
+                dismiss();
+              }}
+            >
+              {theme === "light" ? (
+                <Moon size={14} weight="bold" />
+              ) : (
+                <Sun size={14} weight="bold" />
+              )}
+              Switch to {theme === "light" ? "dark" : "light"} mode
+            </CommandItem>
+            <CommandItem
+              className="gap-3"
+              value="delete"
+              onSelect={(value) => {
+                currentSession?.id &&
+                  removeSession(currentSession?.id).then(() => {
+                    createSession().then((session) => {
+                      router.push(`/chat/${session.id}`);
+
+                      dismiss();
+                    });
+                  });
+              }}
+            >
+              <TrashSimple size={14} weight="bold" />
+              Delete current session
+            </CommandItem>
+            <CommandItem
+              className="gap-3"
+              value="clear history"
+              onSelect={(value) => {
+                clearChatSessions().then(() => {
+                  createSession().then((session) => {
+                    router.push(`/chat/${session?.id}`);
+                    dismiss();
+                  });
+                });
+              }}
+            >
+              <Eraser size={14} weight="bold" />
+              Clear History
+            </CommandItem>
+          </CommandGroup>
+          <CommandGroup heading="Sessions">
+            {sortSessions(sessions, "updatedAt")?.map((session) => (
+              <CommandItem
+                key={session.id}
+                value={`${session.id}/${session.title}`}
+                className="gap-3 w-full"
+                onSelect={(value) => {
+                  router.push(`/chat/${session.id}`);
+                  dismiss();
+                }}
+              >
+                <Chat
+                  size={14}
+                  weight="fill"
+                  className="text-zinc-500 flex-shrink-0"
+                />{" "}
+                <span className="w-full truncate">{session.title}</span>
+                <span className="pl-4 text-xs dark:text-zinc-700 flex-shrink-0">
+                  {moment(session.createdAt).fromNow(true)}
+                </span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </CommandList>
+      </CommandDialog>
+    </FiltersContext.Provider>
+  );
+};
