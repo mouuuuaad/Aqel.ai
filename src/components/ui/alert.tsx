@@ -4,17 +4,17 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const alertVariants = cva(
-  "relative w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-zinc-950 [&>svg~*]:pl-7 dark:border-zinc-800 dark:[&>svg]:text-zinc-50",
+  "relative w-full rounded-2xl px-3 py-3 text-sm md:text-base [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-3 [&>svg]:top-3 [&>svg]:text-zinc-950 [&>svg~*]:pl-6 dark:border-zinc-800 dark:[&>svg]:text-zinc-50",
   {
     variants: {
       variant: {
         default: "bg-white text-zinc-950 dark:bg-black/20 dark:text-zinc-50",
         success:
-          "bg-green-200 text-green-950 dark:bg-green-500/10 dark:text-green-500 [&>svg]:text-green-500 dark:[&>svg]:text-green-500",
+          "bg-green-50 text-green-950 dark:bg-green-500/10 dark:text-green-500 [&>svg]:text-green-500 dark:[&>svg]:text-green-500",
         warning:
           "bg-yellow-200 text-yellow-950 dark:bg-yellow-300/10 dark:text-yellow-100 [&>svg]:text-yellow-500 dark:[&>svg]:text-yellow-100",
         destructive:
-          "bg-red-500/5 text-red-300  [&>svg]:text-red-300 dark:text-red-300  dark:[&>svg]:text-red-300",
+          "bg-transparent text-zinc-400  [&>svg]:text-red-300 dark:text-red-300  dark:[&>svg]:text-red-300",
       },
     },
     defaultVariants: {
@@ -42,7 +42,10 @@ const AlertTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h5
     ref={ref}
-    className={cn("mb-1 font-medium leading-none tracking-tight", className)}
+    className={cn(
+      "mb-1 md:text-sm text-xs font-medium leading-none tracking-tight",
+      className
+    )}
     {...props}
   />
 ));
@@ -54,7 +57,7 @@ const AlertDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("text-sm [&_p]:leading-relaxed", className)}
+    className={cn("text-xs md:text-sm [&_p]:leading-relaxed", className)}
     {...props}
   />
 ));

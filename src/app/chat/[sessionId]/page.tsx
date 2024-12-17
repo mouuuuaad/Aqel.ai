@@ -1,12 +1,12 @@
 "use client";
 import { ChatInput } from "@/components/chat-input";
-import { ChatMessages } from "@/components/chat-messages";
-import { Navbar } from "@/components/navbar";
+import { ChatMessages } from "@/components/messages/chat-messages";
+import { Navbar } from "@/components/layout/navbar";
 import Spinner from "@/components/ui/loading-spinner";
-import { useChatContext } from "@/context/chat/context";
+import { useSessionsContext } from "@/context";
 
 const ChatSessionPage = () => {
-  const { isCurrentSessionLoading, isAllSessionLoading } = useChatContext();
+  const { isCurrentSessionLoading, isAllSessionLoading } = useSessionsContext();
 
   const renderLoader = () => {
     return (
@@ -18,7 +18,7 @@ const ChatSessionPage = () => {
 
   const isLoading = isCurrentSessionLoading || isAllSessionLoading;
   return (
-    <div className="w-full h-screen flex flex-row relative overflow-hidden">
+    <div className="w-full h-[100%] bg-white dark:bg-zinc-800 rounded-xl flex flex-row relative overflow-hidden">
       <Navbar />
       {isLoading && renderLoader()}
       {!isLoading && (

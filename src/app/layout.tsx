@@ -1,18 +1,27 @@
-import { MainLayout } from "@/components/main-layout";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ChatProvider } from "@/context/chat/provider";
-import { FiltersProvider } from "@/context/filters/provider";
-import { SettingsProvider } from "@/context/settings/provider";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { ThemeProvider } from "next-themes";
-import { Inter } from "next/font/google";
 import "./globals.css";
-
-const inter = Inter({ subsets: ["latin"] });
+import {
+  ConfirmProvider,
+  PreferenceProvider,
+  ReactQueryProvider,
+  SessionsProvider,
+  SettingsProvider,
+} from "@/context";
+import { cn } from "@/lib/utils";
+import { interVar } from "./fonts";
 
 export const metadata: Metadata = {
-  title: "AI Chat",
+  title: "ChatHub",
   description: "Most intutive all-in-one AI chat client",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -21,18 +30,25 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className={inter.className}>
-        <ThemeProvider attribute="class">
-          <TooltipProvider>
-            <SettingsProvider>
-              <ChatProvider>
-                <FiltersProvider>
-                  <MainLayout>{children}</MainLayout>
-                </FiltersProvider>
-              </ChatProvider>
-            </SettingsProvider>
-          </TooltipProvider>
+    <html lang="en">
+      <body className={cn(`${interVar.variable} font-sans`, "antialiased")}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <ReactQueryProvider>
+            <TooltipProvider>
+              <ConfirmProvider>
+                <PreferenceProvider>
+                  <SessionsProvider>
+                    <SettingsProvider>{children}</SettingsProvider>
+                  </SessionsProvider>
+                </PreferenceProvider>
+              </ConfirmProvider>
+            </TooltipProvider>
+          </ReactQueryProvider>
         </ThemeProvider>
       </body>
     </html>

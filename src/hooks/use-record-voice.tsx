@@ -2,33 +2,61 @@
 import { blobToBase64, createMediaStream } from "@/lib/record";
 import { OpenAI, toFile } from "openai";
 import { useEffect, useRef, useState } from "react";
-import { usePreferences } from "./use-preferences";
+import { useToast } from "@/components/ui/use-toast";
+import { usePreferenceContext } from "@/context";
+import { useSettingsContext } from "@/context";
+import { Button } from "@/components/ui/button";
+import { Microphone, StopCircle } from "@phosphor-icons/react";
+import { Tooltip } from "@/components/ui/tooltip";
+import { AudioWaveSpinner } from "@/components/ui/audio-wave";
+import { RecordIcon, StopIcon } from "@hugeicons/react";
 
-interface UseRecordVoiceResult {
-  recording: boolean;
-  startRecording: () => void;
-  stopRecording: () => void;
-  transcribing: boolean;
-  text: string;
-}
-
-export const useRecordVoice = (): UseRecordVoiceResult => {
+export const useRecordVoice = () => {
   const [text, setText] = useState<string>("");
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
     null
   );
-  const { getApiKey } = usePreferences();
+  const { preferences } = usePreferenceContext();
+  const { open: openSettings } = useSettingsContext();
+  const { toast } = useToast();
+  const { apiKeys } = usePreferenceContext();
   const [recording, setRecording] = useState<boolean>(false);
   const [transcribing, setIsTranscribing] = useState<boolean>(false);
 
   const isRecording = useRef<boolean>(false);
   const chunks = useRef<Blob[]>([]);
 
-  const startRecording = (): void => {
+  const startRecording = async (): Promise<void> => {
+    setText("");
+    chunks.current = [];
     if (mediaRecorder) {
-      isRecording.current = true;
-      mediaRecorder.start();
+      mediaRecorder.start(1000);
       setRecording(true);
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+
+      mediaRecorder.ondataavailable = (ev: BlobEvent) => {
+        chunks.current.push(ev.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(chunks.current, { type: "audio/wav" });
+        blobToBase64(audioBlob, getText);
+      };
+
+      setMediaRecorder(mediaRecorder);
+      mediaRecorder.start(1000);
+      setRecording(true);
+    } catch (error) {
+      console.error("Error accessing microphone:", error);
+      toast({
+        title: "Microphone access denied",
+        description: "Please grant microphone access to record audio.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -41,10 +69,9 @@ export const useRecordVoice = (): UseRecordVoiceResult => {
   };
 
   const getText = async (base64data: string): Promise<void> => {
+    setIsTranscribing(true);
     try {
-      setIsTranscribing(true);
-
-      const apiKey = await getApiKey("openai");
+      const apiKey = apiKeys.openai;
 
       if (!apiKey) {
         throw new Error("API key not found");
@@ -63,45 +90,103 @@ export const useRecordVoice = (): UseRecordVoiceResult => {
         model: "whisper-1",
       });
 
-      setIsTranscribing(false);
-
-      setText(transcription?.text);
+      setText(transcription?.text || "");
     } catch (error) {
-      setIsTranscribing(false);
-
       console.log(error);
+      toast({
+        title: "Failed to transcribe",
+        description: "Something went wrong. check your openai settings.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTranscribing(false);
     }
   };
 
-  const initialMediaRecorder = (stream: MediaStream): void => {
-    const mediaRecorder = new MediaRecorder(stream);
+  const startVoiceRecording = async () => {
+    const openAIAPIKeys = apiKeys.openai;
+    if (!openAIAPIKeys) {
+      toast({
+        title: "API key missing",
+        description:
+          "Recordings require OpenAI API key. Please check settings.",
+        variant: "destructive",
+      });
+      openSettings("openai");
+      return;
+    }
 
-    mediaRecorder.onstart = () => {
-      createMediaStream(stream, true, (peak) => {});
-      chunks.current = [];
-    };
-
-    mediaRecorder.ondataavailable = (ev: BlobEvent) => {
-      chunks.current.push(ev.data);
-    };
-
-    mediaRecorder.onstop = () => {
-      const audioBlob = new Blob(chunks.current, { type: "audio/wav" });
-
-      blobToBase64(audioBlob, getText);
-    };
-
-    setMediaRecorder(mediaRecorder);
+    if (preferences?.whisperSpeechToTextEnabled) {
+      startRecording();
+    } else {
+      toast({
+        title: "Enable Speech to Text",
+        description:
+          "Recordings require Speech to Text enabled. Please check settings.",
+        variant: "destructive",
+      });
+      openSettings("voice-input");
+    }
   };
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      navigator.mediaDevices
-        .getUserMedia({ audio: true })
-        .then(initialMediaRecorder)
-        .catch((error) => console.log(error));
+  const renderRecordingControls = () => {
+    if (recording) {
+      return (
+        <>
+          <Button
+            variant="ghost"
+            size="iconSm"
+            rounded={"full"}
+            onClick={() => {
+              stopRecording();
+            }}
+          >
+            <StopIcon
+              size={18}
+              variant="solid"
+              strokeWidth="2"
+              className="text-red-300"
+            />{" "}
+          </Button>
+        </>
+      );
     }
-  }, []);
 
-  return { recording, startRecording, stopRecording, text, transcribing };
+    return (
+      <Tooltip content="Record">
+        <Button size="iconSm" variant="ghost" onClick={startVoiceRecording}>
+          <RecordIcon size={18} variant="stroke" strokeWidth="2" />
+        </Button>
+      </Tooltip>
+    );
+  };
+
+  const renderListeningIndicator = () => {
+    if (transcribing) {
+      return (
+        <div className="bg-zinc-800 dark:bg-zinc-900 text-white rounded-full gap-2 px-4 py-1 h-10 flex flex-row items-center text-sm md:text-base">
+          <AudioWaveSpinner /> <p>Transcribing ...</p>
+        </div>
+      );
+    }
+    if (recording) {
+      return (
+        <div className="bg-zinc-800 dark:bg-zinc-900 text-white rounded-full gap-2 px-2 pr-4 py-1 h-10 flex flex-row items-center text-sm md:text-base">
+          <AudioWaveSpinner />
+          <p>Listening ...</p>
+        </div>
+      );
+    }
+  };
+
+  return {
+    recording,
+    startRecording,
+    stopRecording,
+    text,
+    transcribing,
+    renderRecordingControls,
+    renderListeningIndicator,
+    startVoiceRecording,
+  };
 };

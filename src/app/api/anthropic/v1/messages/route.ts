@@ -57,5 +57,6 @@ export async function POST(req: NextRequest, resp: NextResponse) {
       charset: "utf-8",
       "Content-Type": "text/plain",
     },
+    status: res.status,
   });
 }

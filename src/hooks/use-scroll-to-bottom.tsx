@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const useScrollToBottom = () => {
+export const useScrollToBottom = () => {
   const [showButton, setShowButton] = useState(false);
 
   useEffect(() => {
@@ -10,7 +10,7 @@ const useScrollToBottom = () => {
       if (!chatContainer) {
         return;
       }
-      if (chatContainer?.scrollTop <= chatContainer?.scrollHeight - 1000) {
+      if (chatContainer?.scrollTop <= chatContainer?.scrollHeight - 1200) {
         setShowButton(true);
       } else {
         setShowButton(false);
@@ -44,5 +44,3 @@ const useScrollToBottom = () => {
     scrollToBottom,
   };
 };
-
-export default useScrollToBottom;

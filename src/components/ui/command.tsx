@@ -1,12 +1,12 @@
 "use client";
 
 import { type DialogProps } from "@radix-ui/react-dialog";
-import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
 import { Command as CommandPrimitive } from "cmdk";
 import * as React from "react";
 
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogOverlay } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { MagnifyingGlass } from "@phosphor-icons/react";
 
 const Command = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive>,
@@ -15,7 +15,7 @@ const Command = React.forwardRef<
   <CommandPrimitive
     ref={ref}
     className={cn(
-      "flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground",
+      "flex h-full w-full flex-col overflow-hidden rounded-md bg-popover dark:bg-zinc-800 text-popover-foreground",
       className
     )}
     {...props}
@@ -28,8 +28,9 @@ interface CommandDialogProps extends DialogProps {}
 const CommandDialog = ({ children, ...props }: CommandDialogProps) => {
   return (
     <Dialog {...props}>
-      <DialogContent className="overflow-hidden p-0 border border-white/10 pb-2 ">
-        <Command className="dark:!bg-zinc-800 bg-white  [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5">
+      <DialogOverlay className="!bg-transparent backdrop-blur-0" />
+      <DialogContent className="overflow-hidden p-0 border border-transparent dark:border-white/10">
+        <Command className="dark:!bg-zinc-800 bg-white pb-2 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3">
           {children}
         </Command>
       </DialogContent>
@@ -42,7 +43,11 @@ const CommandInput = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
 >(({ className, ...props }, ref) => (
   <div className="flex items-center px-3" cmdk-input-wrapper="">
-    <MagnifyingGlassIcon className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+    <MagnifyingGlass
+      size={24}
+      weight="bold"
+      className="mr-2 h-4 w-4 shrink-0 opacity-50"
+    />
     <CommandPrimitive.Input
       ref={ref}
       className={cn(
@@ -62,7 +67,10 @@ const CommandList = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <CommandPrimitive.List
     ref={ref}
-    className={cn("max-h-[410px] overflow-y-auto overflow-x-hidden", className)}
+    className={cn(
+      "max-h-[410px] overflow-y-auto no-scrollbar overflow-x-hidden",
+      className
+    )}
     {...props}
   />
 ));
@@ -75,7 +83,7 @@ const CommandEmpty = React.forwardRef<
 >((props, ref) => (
   <CommandPrimitive.Empty
     ref={ref}
-    className="py-6 text-center text-sm"
+    className="py-6 text-center text-sm md:text-base"
     {...props}
   />
 ));
@@ -89,7 +97,7 @@ const CommandGroup = React.forwardRef<
   <CommandPrimitive.Group
     ref={ref}
     className={cn(
-      "overflow-hidden text-foreground [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium dark:[&_[cmdk-group-heading]]:text-white/30 [&_[cmdk-group-heading]]:text-zinc-800/50",
+      "overflow-hidden text-foreground [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:text-sm md:text-base [&_[cmdk-group-heading]]:font-medium dark:[&_[cmdk-group-heading]]:text-white/30 [&_[cmdk-group-heading]]:text-zinc-800/50",
       className
     )}
     {...props}
@@ -117,7 +125,7 @@ const CommandItem = React.forwardRef<
   <CommandPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex cursor-pointer text-zinc-600 dark:text-zinc-100 items-center rounded-xl !px-3 py-1.5 text-sm outline-none aria-selected:bg-zinc-200 dark:aria-selected:bg-zinc-900/50 aria-selected:text-zinc-600 dark:aria-selected:text-zinc-100",
+      "relative flex cursor-pointer font-medium gap-2 text-zinc-800 dark:text-zinc-100 items-center rounded-xl !px-3 !py-2 min-h-12 text-xs md:text-sm outline-none aria-selected:bg-zinc-100 dark:aria-selected:bg-zinc-900/50 aria-selected:text-zinc-800 aria-disabled:opacity-50 aria-disabled:pointer-events-none dark:aria-selected:text-zinc-100",
       className
     )}
     {...props}
@@ -133,7 +141,7 @@ const CommandShortcut = ({
   return (
     <span
       className={cn(
-        "ml-auto text-xs tracking-widest text-muted-foreground",
+        "ml-auto text-sm md:text-base tracking-widest text-muted-foreground",
         className
       )}
       {...props}

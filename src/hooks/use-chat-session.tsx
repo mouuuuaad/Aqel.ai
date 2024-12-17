@@ -5,6 +5,9 @@ import moment from "moment";
 import { v4 } from "uuid";
 import { TModelKey } from "./use-model-list";
 
+import { sortMessages, sortSessions } from "@/lib/helper";
+import { useMutation, useQuery } from "@tanstack/react-query";
+
 export enum ModelType {
   GPT3 = "gpt-3",
   GPT4 = "gpt-4",
@@ -12,25 +15,45 @@ export enum ModelType {
   CLAUDE3 = "claude-3",
 }
 
-export type PromptProps = {
-  type: PromptType;
+export type TAssistantType = "base" | "custom";
+
+export type TAssistant = {
+  name: string;
+  systemPrompt: string;
+  baseModel: TModelKey;
+  key: TModelKey | string;
+  type: TAssistantType;
+};
+
+export type TLLMInputProps = {
   context?: string;
-  role: RoleType;
-  query?: string;
+  input?: string;
   image?: string;
-  regenerate?: boolean;
+  sessionId: string;
+  messageId?: string;
+  assistant: TAssistant;
+};
+
+export type TToolResponse = {
+  toolName: string;
+  toolLoading?: boolean;
+  toolArgs?: any;
+  toolResponse?: any;
+  toolRenderArgs?: any;
 };
 
 export type TChatMessage = {
   id: string;
-  model: TModelKey;
-  human: HumanMessage;
-  ai: AIMessage;
+  rawHuman?: string;
+  rawAI?: string;
+  sessionId: string;
+  isLoading?: boolean;
+  stop?: boolean;
+  stopReason?: "error" | "cancel" | "apikey" | "recursion" | "finish";
   image?: string;
-  rawHuman: string;
-  rawAI: string;
-  props?: PromptProps;
-  createdAt?: string;
+  inputProps?: TLLMInputProps;
+  tools?: TToolResponse[];
+  createdAt: string;
 };
 
 export type TChatSession = {
@@ -41,7 +64,7 @@ export type TChatSession = {
   updatedAt?: string;
 };
 
-export const useChatSession = () => {
+export const useChatSession = (id?: string) => {
   const getSessions = async (): Promise<TChatSession[]> => {
     return (await get("chat-sessions")) || [];
   };
@@ -59,17 +82,26 @@ export const useChatSession = () => {
     const sessions = await getSessions();
     const newSessions = sessions.map((session) => {
       if (session.id === sessionId) {
-        if (!session?.messages?.length) {
+        if (!!session?.messages?.length) {
+          const isExistingMessage = session.messages.find(
+            (m) => m.id === chatMessage.id
+          );
           return {
             ...session,
-            messages: [...session.messages, chatMessage],
-            title: chatMessage.rawHuman,
-            updatedAt: moment().toISOString(),
+            messages: isExistingMessage
+              ? session.messages.map((m) => {
+                  if (m.id === chatMessage.id) {
+                    return { ...m, ...chatMessage };
+                  }
+                  return m;
+                })
+              : [...session.messages, chatMessage],
           };
         }
         return {
           ...session,
-          messages: [...session.messages, chatMessage],
+          messages: [chatMessage],
+          title: chatMessage.rawHuman,
           updatedAt: moment().toISOString(),
         };
       }
@@ -80,7 +112,7 @@ export const useChatSession = () => {
 
   const updateSession = async (
     sessionId: string,
-    newSession: Omit<TChatSession, "id">
+    newSession: Partial<Omit<TChatSession, "id">>
   ) => {
     const sessions = await getSessions();
     const newSessions = sessions.map((session) => {
@@ -120,20 +152,12 @@ export const useChatSession = () => {
       return session;
     });
 
+    const newFilteredSessions = newSessions?.filter(
+      (s) => !!s?.messages?.length
+    );
     console.log("newSessions", newSessions);
-    await set("chat-sessions", newSessions);
-    return newSessions;
-  };
-
-  const sortSessions = (
-    sessions: TChatSession[],
-    sortBy: "createdAt" | "updatedAt"
-  ) => {
-    return sessions.sort((a, b) => moment(b[sortBy]).diff(moment(a[sortBy])));
-  };
-
-  const sortMessages = (messages: TChatMessage[], sortBy: "createdAt") => {
-    return messages.sort((a, b) => moment(b[sortBy]).diff(moment(a[sortBy])));
+    await set("chat-sessions", newFilteredSessions);
+    return newFilteredSessions;
   };
 
   const createNewSession = async () => {
@@ -161,17 +185,130 @@ export const useChatSession = () => {
     await set("chat-sessions", []);
   };
 
+  const sessionsQuery = useQuery({
+    queryKey: ["chat-sessions"],
+    queryFn: async () => {
+      return await getSessions();
+    },
+  });
+
+  const setSessionMutation = useMutation({
+    mutationFn: async (session: TChatSession) => await setSession(session),
+    onSuccess: () => {
+      sessionsQuery.refetch();
+    },
+  });
+
+  const addMessageToSessionMutation = useMutation({
+    mutationFn: async ({
+      sessionId,
+      message,
+    }: {
+      sessionId: string;
+      message: TChatMessage;
+    }) => {
+      await addMessageToSession(sessionId, message);
+    },
+    onSuccess: () => {
+      sessionsQuery.refetch();
+    },
+  });
+
+  const updateSessionMutation = useMutation({
+    mutationFn: async ({
+      sessionId,
+      session,
+    }: {
+      sessionId: string;
+      session: Partial<Omit<TChatSession, "id">>;
+    }) => {
+      await updateSession(sessionId, session);
+    },
+    onSuccess: () => {
+      sessionsQuery.refetch();
+    },
+  });
+
+  const removeSessionMutation = useMutation({
+    mutationFn: async (sessionId: string) => await removeSessionById(sessionId),
+    onSuccess: () => {
+      sessionsQuery.refetch();
+    },
+  });
+
+  const removeSessionByIdMutation = useMutation({
+    mutationFn: async (sessionId: string) => await removeSessionById(sessionId),
+    onSuccess: () => {
+      sessionsQuery.refetch();
+    },
+  });
+
+  const getSessionByIdQuery = useQuery({
+    queryKey: ["chat-session", id],
+    queryFn: async () => {
+      if (!id) return;
+      return await getSessionById(id);
+    },
+    enabled: !!id,
+  });
+
+  const createNewSessionMutation = useMutation({
+    mutationFn: async () => await createNewSession(),
+    onSuccess: () => {
+      sessionsQuery?.refetch();
+    },
+  });
+
+  const clearSessionsMutation = useMutation({
+    mutationFn: async () => await clearSessions(),
+    onSuccess: () => {
+      sessionsQuery.refetch();
+    },
+  });
+
+  const removeMessageByIdMutation = useMutation({
+    mutationFn: async ({
+      sessionId,
+      messageId,
+    }: {
+      sessionId: string;
+      messageId: string;
+    }) => {
+      await removeMessageById(sessionId, messageId);
+    },
+    onSuccess: () => {
+      sessionsQuery.refetch();
+    },
+  });
+
+  const getSessionByIdMutation = useMutation({
+    mutationFn: async (id: string) => await getSessionById(id),
+  });
+
+  const addSessionsMutation = useMutation({
+    mutationFn: async (sessions: TChatSession[]) => {
+      const existingSessions = await getSessions();
+      const newSessions = [...existingSessions, ...sessions];
+      await set("chat-sessions", newSessions);
+      return newSessions;
+    },
+    onSuccess: () => {
+      sessionsQuery.refetch();
+    },
+  });
+
   return {
-    getSessions,
-    setSession,
-    getSessionById,
-    removeSessionById,
-    updateSession,
-    sortSessions,
-    addMessageToSession,
-    createNewSession,
-    clearSessions,
-    sortMessages,
-    removeMessageById,
+    sessionsQuery,
+    setSessionMutation,
+    addMessageToSessionMutation,
+    updateSessionMutation,
+    removeSessionMutation,
+    removeSessionByIdMutation,
+    getSessionByIdQuery,
+    createNewSessionMutation,
+    clearSessionsMutation,
+    removeMessageByIdMutation,
+    getSessionByIdMutation,
+    addSessionsMutation,
   };
 };

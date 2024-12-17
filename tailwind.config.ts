@@ -10,10 +10,6 @@ const config = {
   ],
   prefix: "",
   theme: {
-    animation: {
-      marquee: "marquee 160s linear infinite",
-      marquee2: "marquee2 160s linear infinite",
-    },
     container: {
       center: true,
       padding: "2rem",
@@ -23,6 +19,20 @@ const config = {
     },
     extend: {
       colors: {
+        zinc: {
+          "50": "hsl(0, 0%, 93.7%, <alpha-value>)",
+          "100": "hsl(0, 0%, 87.8%, <alpha-value>)",
+          "200": "hsl(0, 0%, 77%, <alpha-value>)",
+          "300": "hsl(0, 0%, 66.3%, <alpha-value>)",
+          "400": "hsl(0, 0%, 55.5%, <alpha-value>)",
+          "500": "hsl(0, 0%, 45.1%, <alpha-value>)",
+          "600": "hsl(0, 0%, 34.3%, <alpha-value>)",
+          "700": "hsl(0, 0%, 23.5%, <alpha-value>)",
+          "800": "hsl(0, 0%, 12.7%, <alpha-value>)",
+          "900": "hsl(0, 0%, 5.9%, <alpha-value>)",
+          "950": "hsl(0, 0%, 3.1%, <alpha-value>)",
+        },
+
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -57,6 +67,23 @@ const config = {
           foreground: "hsl(var(--card-foreground))",
         },
       },
+      fontSize: {
+        xs: "0.75rem",
+        sm: "0.875rem",
+        base: "0.975rem",
+        lg: "1.125rem",
+        xl: "1.25rem",
+        "2xl": "1.563rem",
+        "3xl": "1.953rem",
+        "4xl": "2.441rem",
+        "5xl": "3.052rem",
+      },
+      // fontWeights: {
+      //   normal: 350,
+      //   medium: 450,
+      //   semibold: 550,
+      //   bold: 650,
+      // },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
@@ -80,13 +107,9 @@ const config = {
           "100%": { transform: "translateX(0%)" },
         },
       },
-      animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
-      },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require("@tailwindcss/typography")],
 } satisfies Config;
 
 export default config;

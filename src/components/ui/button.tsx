@@ -5,29 +5,32 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center gap-1 justify-center whitespace-nowrap rounded-md text-sm  transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center gap-1 justify-center font-medium whitespace-nowrap rounded-md transition-colors focus-visible:outline-none",
   {
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground font-normal  hover:bg-primary/90",
+          "bg-zinc-800 text-white dark:outline dark:outline-white/10  hover:bg-zinc-900",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+          "bg-red-400 dark:bg-red-400/50 text-destructive-foreground hover:bg-red-500 dark:hover:bg-red-500/50",
         outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+          "border border-zinc-500/30 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-100 dark:hover:text-white hover:text-zinc-900",
         secondary:
-          "bg-zinc-200 text-secondary-foreground hover:bg-zinc-200/80 dark:bg-white/10",
+          "bg-black/10 text-zinc-700 dark:text-zinc-100 hover:bg-black/15 dark:bg-white/5",
         ghost:
           "hover:bg-black/10 dark:hover:bg-white/10 text-zinc-600 hover:text-zinc-800 dark:text-zinc-200 dark:hover:text-white",
-        link: "text-primary underline-offset-4 hover:underline",
+        link: "text-zinc-600 text-zinc-400 underline-offset-4 hover:underline h-auto decoration-black/20 dark:decoration-white/20",
+        text: "p-0 text-xs",
       },
       size: {
-        default: "h-10 px-4 py-3",
-        sm: "h-8 px-3 text-xs",
-        lg: "h-12  px-8",
-        icon: "h-9 min-w-9",
-        iconSm: "h-8 min-w-8",
-        iconXS: "h-6 min-w-6 text-xs",
+        default: "h-10 px-4 py-3 text-xs md:text-sm",
+        sm: "h-8 px-3 text-xs md:text-sm",
+        lg: "h-12  px-8 text-xs md:text-sm",
+        icon: "h-9 min-w-9 text-xs md:text-sm",
+        iconSm: "h-8 min-w-8 text-xs md:text-sm",
+        iconXS: "h-6 min-w-6 text-xs md:text-sm",
+        link: "p-0",
+        linkSm: "p-0 text-xs",
       },
       rounded: {
         default: "rounded-md",

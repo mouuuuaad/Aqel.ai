@@ -1,35 +1,48 @@
-import { examplePrompts } from "@/lib/prompts";
+import { useChatContext } from "@/context/chat";
+import { usePromptsContext } from "@/context/prompts";
+import { ArrowRight02Icon } from "@hugeicons/react";
 import { motion } from "framer-motion";
+import { Flex } from "./ui/flex";
+import { Type } from "./ui/text";
 
-export type TChatExamples = {
-  onExampleClick: (prompt: string) => void;
-  show: boolean;
-};
-export const ChatExamples = ({ onExampleClick, show }: TChatExamples) => {
-  if (!show) return null;
+export type TChatExamples = {};
+export const ChatExamples = () => {
+  const { allPrompts } = usePromptsContext();
+  const { editor } = useChatContext();
+  if (!allPrompts?.length) {
+    return null;
+  }
   return (
-    <div className="flex flex-col gap-3 mt-2">
-      <div className="grid grid-cols-3 gap-3 w-[700px]">
-        {examplePrompts?.map((example, index) => (
-          <motion.div
-            initial={{
-              opacity: 0,
-            }}
-            className="flex bg-white shadow-sm dark:bg-zinc-800 flex-col gap-2 items-start text-sm py-3 px-4 border border-dark/5 dark:border-white/5 text-zinc-600 dark:text-zinc-400 w-full rounded-2xl hover:bg-zinc-50 dark:hover:bg-black/20 cursor-pointer"
-            key={index}
-            animate={{
-              opacity: 1,
-            }}
-            onClick={() => {
-              onExampleClick(example.prompt);
-            }}
-          >
-            <p className="text-sm text-zinc-800 dark:text-white font-medium w-full">
-              {example.title}
-            </p>
-          </motion.div>
-        ))}
+    <Flex direction="col" gap="md" justify="center" items="center">
+      <div className="flex flex-col gap-3 p-4">
+        <Type size="sm" textColor="tertiary">
+          Try Prompts
+        </Type>
+        <div className="flex flex-col gap-1 md:gap-3 md:w-[700px] lg:w-[720px] w-full">
+          {allPrompts.slice(0, 3)?.map((example, index) => (
+            <motion.div
+              initial={{
+                opacity: 0,
+              }}
+              className="flex bg-white dark:bg-zinc-800 flex-row gap-2 items-center text-sm md:text-base dark:border-white/5 text-zinc-600 dark:text-zinc-400 w-full  cursor-pointer relative"
+              key={index}
+              animate={{
+                opacity: 1,
+              }}
+              onClick={() => {
+                editor?.commands?.clearContent();
+                editor?.commands?.setContent(example.content);
+                editor?.commands?.focus("end");
+              }}
+            >
+              <ArrowRight02Icon size={18} variant="solid" strokeWidth="2" />
+              <p className="text-sm md:text-base hover:underline hover:decoration-zinc-500 hover:underline-offset-4 text-zinc-800 dark:text-white font-medium w-full">
+                {example.name}
+              </p>
+            </motion.div>
+          ))}
+        </div>
       </div>
-    </div>
+    </Flex>
   );
 };
